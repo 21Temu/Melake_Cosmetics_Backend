@@ -21,10 +21,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',  # ADD THIS LINE
     'corsheaders',
     'api',
-    #  'admin_tools',
-    # 'admin_tools.theming',
-    # 'admin_tools.menu',
-    # 'admin_tools.dashboard',
 ]
 
 
