@@ -245,54 +245,55 @@ class BankViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
-
-    # ✅ Only show messages related to logged-in user
+    
     def get_queryset(self):
         return Message.objects.filter(
             Q(sender=self.request.user) | Q(receiver=self.request.user)
         ).order_by('-created_at')
-
-    # ✅ Create message
-    def create(self, request, *args, **kwargs):
+    
+    queryset = Message.objects.none()
+    
+    def create(self, request):
         data = request.data.copy()
         data['sender'] = request.user.id
-
-        receiver_id = data.get('receiver')
-
-        # 👉 If no receiver → send to admin
+        
+        # Check if receiver is provided in the request
+        receiver_id = request.data.get('receiver')
+        
+        # If no receiver specified, send to user ID 1 (specific admin)
         if not receiver_id:
-            admin_user = User.objects.filter(is_staff=True).first()
-
-            if not admin_user:
+            try:
+                # Get user with ID 1
+                admin_user = User.objects.get(id=1)
+                
+                message = Message.objects.create(
+                    sender=request.user,
+                    receiver=admin_user,
+                    message=request.data.get('message'),
+                    is_read=False
+                )
+                
+                serializer = self.get_serializer(message)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
+            except User.DoesNotExist:
                 return Response(
-                    {'error': 'No admin user found'},
+                    {'error': 'Admin user (ID 1) not found'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
-            data['receiver'] = admin_user.id
-
-        # ✅ Validate and save
+        
+        # Normal flow: send to specific receiver
         serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    # ✅ Mark message as read
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
         message = self.get_object()
-
-        # 🔒 Only receiver can mark as read
-        if message.receiver != request.user:
-            return Response(
-                {'error': 'Not allowed'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         message.is_read = True
         message.save()
-
         return Response({'message': 'Message marked as read'})
 # ============ ADMIN DASHBOARD VIEW ============
 # Place this HERE - after all ViewSets, before the end of file
