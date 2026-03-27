@@ -256,6 +256,37 @@ class MessageViewSet(viewsets.ModelViewSet):
     def create(self, request):
         data = request.data.copy()
         data['sender'] = request.user.id
+        
+        # Check if receiver is provided in the request
+        receiver_id = request.data.get('receiver')
+        
+        # If no receiver specified, send to ALL superusers (admins)
+        if not receiver_id:
+            # Get all superusers (admins)
+            superusers = User.objects.filter(is_superuser=True)
+            
+            if not superusers.exists():
+                return Response(
+                    {'error': 'No admin users available to receive messages'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create a message for each superuser
+            created_messages = []
+            for admin in superusers:
+                message = Message.objects.create(
+                    sender=request.user,
+                    receiver=admin,
+                    message=request.data.get('message'),
+                    is_read=False
+                )
+                created_messages.append(message)
+            
+            # Return the first message as response
+            serializer = self.get_serializer(created_messages[0])
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        # Normal flow: send to specific receiver
         serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             serializer.save()
