@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ========== SECURITY - READ FROM ENVIRONMENT VARIABLES ==========
 # Get secret key from environment variable (for production security)
-SECRET_KEY = os.environ.get('SECRET_KEY', '8d6436fecc0239b6d1a2c9f3bf9775f2')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'UEr0xXhiz7hhzNvIFX3elRWfKPp-l-w0OlvaYecvb-vG8EV8AKs4gmDrsnFD3bNNJuM')
 
 # Get debug mode from environment variable (False in production)
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
@@ -145,7 +145,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ========== CORS - READ FROM ENVIRONMENT VARIABLES ==========
 # Get CORS allowed origins from environment variable (for production)
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://melakeshop.vercel.app').split(',')
 CORS_ALLOW_CREDENTIALS = True
 
 # In development, allow all origins
@@ -156,7 +156,7 @@ else:
 # ========== END CORS ==========
 
 # ========== CSRF TRUSTED ORIGINS - READ FROM ENVIRONMENT ==========
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000').split(',')
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://melakeshop.vercel.app').split(',')
 # ========== END CSRF ==========
 
 # ========== REST FRAMEWORK SETTINGS ==========
