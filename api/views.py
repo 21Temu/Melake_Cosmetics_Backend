@@ -260,31 +260,27 @@ class MessageViewSet(viewsets.ModelViewSet):
         # Check if receiver is provided in the request
         receiver_id = request.data.get('receiver')
         
-        # If no receiver specified, send to ALL superusers (admins)
+        # If no receiver specified, send to SPECIFIC admin (user ID 2)
         if not receiver_id:
-            # Get all superusers (admins)
-            superusers = User.objects.filter(is_superuser=True)
-            
-            if not superusers.exists():
-                return Response(
-                    {'error': 'No admin users available to receive messages'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Create a message for each superuser
-            created_messages = []
-            for admin in superusers:
+            try:
+                # Get user with ID 2 (specific admin)
+                admin_user = User.objects.get(id=2)
+                
                 message = Message.objects.create(
                     sender=request.user,
-                    receiver=admin,
+                    receiver=admin_user,
                     message=request.data.get('message'),
                     is_read=False
                 )
-                created_messages.append(message)
-            
-            # Return the first message as response
-            serializer = self.get_serializer(created_messages[0])
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
+                serializer = self.get_serializer(message)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                
+            except User.DoesNotExist:
+                return Response(
+                    {'error': 'Admin user (ID 2) not found'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         # Normal flow: send to specific receiver
         serializer = self.get_serializer(data=data)
@@ -299,7 +295,6 @@ class MessageViewSet(viewsets.ModelViewSet):
         message.is_read = True
         message.save()
         return Response({'message': 'Message marked as read'})
-
 # ============ ADMIN DASHBOARD VIEW ============
 # Place this HERE - after all ViewSets, before the end of file
 @staff_member_required
