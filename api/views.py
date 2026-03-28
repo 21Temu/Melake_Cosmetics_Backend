@@ -214,6 +214,16 @@ class OrderViewSet(viewsets.ModelViewSet):
         data['order_number'] = str(uuid.uuid4())[:8].upper()
         data['user'] = request.user.id
         
+        # Make sure address is included
+        # The frontend should send 'address' in the request
+        if 'address' not in data:
+            # If address not in request, try to get from user profile
+            try:
+                profile = UserProfile.objects.get(user=request.user)
+                data['address'] = profile.address
+            except UserProfile.DoesNotExist:
+                data['address'] = ''
+        
         serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             order = serializer.save()
