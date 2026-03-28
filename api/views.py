@@ -210,33 +210,36 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.none()
     
     def create(self, request):
-        data = request.data.copy()
-        data['order_number'] = str(uuid.uuid4())[:8].upper()
-        data['user'] = request.user.id
+    data = request.data.copy()
+    data['order_number'] = str(uuid.uuid4())[:8].upper()
+    data['user'] = request.user.id
+    
+    # Map address from frontend (frontend sends 'address' from formData)
+    if 'address' in request.data:
+        data['address'] = request.data['address']
+    elif 'shippingAddress' in request.data:
+        data['address'] = request.data['shippingAddress']
+    else:
+        # If no address, get from user profile
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+            data['address'] = profile.address
+        except UserProfile.DoesNotExist:
+            data['address'] = ''
+    
+    serializer = self.get_serializer(data=data)
+    if serializer.is_valid():
+        order = serializer.save()
         
-        # Make sure address is included
-        # The frontend should send 'address' in the request
-        if 'address' not in data:
-            # If address not in request, try to get from user profile
-            try:
-                profile = UserProfile.objects.get(user=request.user)
-                data['address'] = profile.address
-            except UserProfile.DoesNotExist:
-                data['address'] = ''
+        product = order.product
+        product.stock -= order.quantity
+        product.sold_count += order.quantity
+        product.save()
         
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid():
-            order = serializer.save()
-            
-            product = order.product
-            product.stock -= order.quantity
-            product.sold_count += order.quantity
-            product.save()
-            
-            Cart.objects.filter(user=request.user, status='active').delete()
-            
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        Cart.objects.filter(user=request.user, status='active').delete()
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
