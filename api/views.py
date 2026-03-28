@@ -273,10 +273,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         # Check if receiver is provided in the request
         receiver_id = request.data.get('receiver')
         
-        # If no receiver specified, send to user ID 1 (specific admin)
+        # If no receiver specified, send to user ID 2 (specific admin)
         if not receiver_id:
             try:
-                # Get user with ID 1
+                # Get user with ID 2 (your admin)
                 admin_user = User.objects.get(id=2)
                 
                 message = Message.objects.create(
@@ -291,7 +291,7 @@ class MessageViewSet(viewsets.ModelViewSet):
                 
             except User.DoesNotExist:
                 return Response(
-                    {'error': 'Admin user (ID 1) not found'}, 
+                    {'error': 'Admin user (ID 2) not found'},  # Fixed error message
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
@@ -301,15 +301,6 @@ class MessageViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['post'])
-    def mark_read(self, request, pk=None):
-        message = self.get_object()
-        message.is_read = True
-        message.save()
-        return Response({'message': 'Message marked as read'})
-# ============ ADMIN DASHBOARD VIEW ============
-# Place this HERE - after all ViewSets, before the end of file
 @staff_member_required
 def admin_dashboard(request):
     context = {
