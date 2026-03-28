@@ -277,7 +277,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         if not receiver_id:
             try:
                 # Get user with ID 1
-                admin_user = User.objects.get(id=1)
+                admin_user = User.objects.get(id=2)
                 
                 message = Message.objects.create(
                     sender=request.user,
